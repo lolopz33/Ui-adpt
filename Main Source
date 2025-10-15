@@ -1,1527 +1,698 @@
--- Orion UI Library - Complete 1700+ Lines Version
--- Modern UI with All Original Features
+-- Astra UI Library
+local AstraUI = {}
 
-local OrionLib = {}
-OrionLib.__index = OrionLib
-
--- Services
+-- Serviços
 local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
 local HttpService = game:GetService("HttpService")
-local Players = game:GetService("Players")
-local CoreGui = game:GetService("CoreGui")
-local TextService = game:GetService("TextService")
 
--- Modern Theme System
-OrionLib.Theme = {
-    Accent = Color3.fromRGB(99, 102, 241),
-    LightAccent = Color3.fromRGB(129, 140, 248),
-    DarkAccent = Color3.fromRGB(79, 70, 229),
-    
-    Background = Color3.fromRGB(15, 23, 42),
-    Secondary = Color3.fromRGB(30, 41, 59),
-    Tertiary = Color3.fromRGB(51, 65, 85),
-    Card = Color3.fromRGB(30, 41, 59),
-    
-    Text = Color3.fromRGB(248, 250, 252),
-    SubText = Color3.fromRGB(203, 213, 225),
-    Disabled = Color3.fromRGB(100, 116, 139),
-    
-    Success = Color3.fromRGB(16, 185, 129),
-    Warning = Color3.fromRGB(245, 158, 11),
-    Error = Color3.fromRGB(239, 68, 68),
-    Info = Color3.fromRGB(59, 130, 246),
-    
-    -- Gradient Presets
-    Gradients = {
-        Primary = ColorSequence.new({
-            ColorSequenceKeypoint.new(0, Color3.fromRGB(99, 102, 241)),
-            ColorSequenceKeypoint.new(1, Color3.fromRGB(139, 92, 246))
-        }),
-        Secondary = ColorSequence.new({
-            ColorSequenceKeypoint.new(0, Color3.fromRGB(6, 182, 212)),
-            ColorSequenceKeypoint.new(1, Color3.fromRGB(14, 165, 233))
-        }),
-        Success = ColorSequence.new({
-            ColorSequenceKeypoint.new(0, Color3.fromRGB(16, 185, 129)),
-            ColorSequenceKeypoint.new(1, Color3.fromRGB(5, 150, 105))
-        })
+-- Configurações
+AstraUI.Themes = {
+    Dark = {
+        Primary = Color3.fromRGB(103, 58, 183),
+        Secondary = Color3.fromRGB(76, 175, 80),
+        Background = Color3.fromRGB(15, 15, 15),
+        Surface = Color3.fromRGB(25, 25, 25),
+        Surface2 = Color3.fromRGB(35, 35, 35),
+        Text = Color3.fromRGB(255, 255, 255),
+        TextSecondary = Color3.fromRGB(180, 180, 180),
+        Accent = Color3.fromRGB(255, 64, 129),
+        Success = Color3.fromRGB(76, 175, 80),
+        Error = Color3.fromRGB(244, 67, 54),
+        Warning = Color3.fromRGB(255, 193, 7)
+    },
+    Light = {
+        Primary = Color3.fromRGB(103, 58, 183),
+        Secondary = Color3.fromRGB(76, 175, 80),
+        Background = Color3.fromRGB(245, 245, 245),
+        Surface = Color3.fromRGB(255, 255, 255),
+        Surface2 = Color3.fromRGB(240, 240, 240),
+        Text = Color3.fromRGB(0, 0, 0),
+        TextSecondary = Color3.fromRGB(100, 100, 100),
+        Accent = Color3.fromRGB(255, 64, 129),
+        Success = Color3.fromRGB(76, 175, 80),
+        Error = Color3.fromRGB(244, 67, 54),
+        Warning = Color3.fromRGB(255, 193, 7)
     }
 }
 
--- Configuration
-OrionLib.Config = {
-    DefaultSize = UDim2.new(0, 600, 0, 400),
-    MinSize = UDim2.new(0, 400, 0, 300),
-    MaxSize = UDim2.new(0, 1000, 0, 800),
-    AnimationSpeed = 0.2,
-    BlurIntensity = 8,
-    Roundness = 12
-}
+AstraUI.Flags = {}
+AstraUI.Tabs = {}
+AstraUI.Connections = {}
+AstraUI.Configs = {}
+AstraUI.CurrentTheme = "Dark"
 
--- Utility Functions
-function OrionLib:Create(class, properties)
-    local obj = Instance.new(class)
-    for prop, value in pairs(properties) do
-        obj[prop] = value
+-- Funções utilitárias
+function AstraUI:Tween(Object, Properties, Duration, Style, Direction)
+    local TweenInfo = TweenInfo.new(Duration or 0.3, Style or Enum.EasingStyle.Quad, Direction or Enum.EasingDirection.Out)
+    local Tween = TweenService:Create(Object, TweenInfo, Properties)
+    Tween:Play()
+    return Tween
+end
+
+function AstraUI:CreateElement(ClassName, Properties)
+    local Element = Instance.new(ClassName)
+    for Property, Value in pairs(Properties) do
+        if Property == "Parent" then
+            Value = Value
+        else
+            Element[Property] = Value
+        end
     end
-    return obj
+    return Element
 end
 
-function OrionLib:Tween(object, properties, duration)
-    local tweenInfo = TweenInfo.new(duration or OrionLib.Config.AnimationSpeed)
-    local tween = TweenService:Create(object, tweenInfo, properties)
-    tween:Play()
-    return tween
+function AstraUI:CreateRoundCorner(Parent, Radius)
+    local Corner = self:CreateElement("UICorner", {
+        CornerRadius = UDim.new(0, Radius or 6),
+        Parent = Parent
+    })
+    return Corner
 end
 
-function OrionLib:Roundify(object)
-    local corner = Instance.new("UICorner")
-    corner.CornerRadius = UDim.new(0, OrionLib.Config.Roundness)
-    corner.Parent = object
-    return corner
+function AstraUI:CreateStroke(Parent, Color, Thickness)
+    local Stroke = self:CreateElement("UIStroke", {
+        Color = Color or Color3.new(1, 1, 1),
+        Thickness = Thickness or 1,
+        Parent = Parent
+    })
+    return Stroke
 end
 
-function OrionLib:AddShadow(object)
-    local shadow = Instance.new("ImageLabel")
-    shadow.Name = "Shadow"
-    shadow.Size = UDim2.new(1, 0, 1, 0)
-    shadow.Position = UDim2.new(0, 0, 0, 0)
-    shadow.BackgroundTransparency = 1
-    shadow.Image = "rbxassetid://1316045217"
-    shadow.ImageColor3 = Color3.new(0, 0, 0)
-    shadow.ImageTransparency = 0.8
-    shadow.ScaleType = Enum.ScaleType.Slice
-    shadow.SliceCenter = Rect.new(10, 10, 118, 118)
-    shadow.ZIndex = object.ZIndex - 1
-    shadow.Parent = object
-    return shadow
+function AstraUI:CreatePadding(Parent, Padding)
+    local Padding = self:CreateElement("UIPadding", {
+        PaddingLeft = UDim.new(0, Padding),
+        PaddingRight = UDim.new(0, Padding),
+        PaddingTop = UDim.new(0, Padding),
+        PaddingBottom = UDim.new(0, Padding),
+        Parent = Parent
+    })
+    return Padding
 end
 
--- Notification System
-OrionLib.Notifications = {
-    Active = {},
-    History = {}
-}
-
-function OrionLib:Notify(config)
-    config = config or {}
+-- Sistema de Notificações
+function AstraUI:MakeNotification(Config)
+    local Theme = self.Themes[self.CurrentTheme]
     
-    local notification = {
-        Id = HttpService:GenerateGUID(false),
-        Title = config.Title or "Notification",
-        Content = config.Content or "",
-        Duration = config.Duration or 5,
-        Type = config.Type or "Info",
-        Timestamp = os.time()
-    }
+    local Notification = self:CreateElement("Frame", {
+        Name = "Notification",
+        Size = UDim2.new(0, 300, 0, 80),
+        Position = UDim2.new(1, 10, 1, -90),
+        BackgroundColor3 = Theme.Surface,
+        BorderSizePixel = 0,
+        ClipsDescendants = true,
+        Parent = self.NotificationContainer
+    })
     
-    -- Create notification UI
-    local notificationUI = self:CreateNotificationUI(notification)
-    table.insert(self.Notifications.Active, {Data = notification, UI = notificationUI})
-    table.insert(self.Notifications.History, notification)
+    self:CreateRoundCorner(Notification, 8)
+    self:CreateStroke(Notification, Theme.Surface2, 1)
     
-    -- Auto-remove
-    if notification.Duration > 0 then
-        delay(notification.Duration, function()
-            self:RemoveNotification(notification.Id)
+    local Icon = self:CreateElement("ImageLabel", {
+        Name = "Icon",
+        Size = UDim2.new(0, 24, 0, 24),
+        Position = UDim2.new(0, 15, 0, 15),
+        BackgroundTransparency = 1,
+        Image = Config.Image or "rbxassetid://7072718364",
+        Parent = Notification
+    })
+    
+    local Title = self:CreateElement("TextLabel", {
+        Name = "Title",
+        Size = UDim2.new(1, -60, 0, 20),
+        Position = UDim2.new(0, 50, 0, 15),
+        BackgroundTransparency = 1,
+        Text = Config.Name or "Notification",
+        TextColor3 = Theme.Text,
+        TextSize = 16,
+        Font = Enum.Font.GothamBold,
+        TextXAlignment = Enum.TextXAlignment.Left,
+        Parent = Notification
+    })
+    
+    local Content = self:CreateElement("TextLabel", {
+        Name = "Content",
+        Size = UDim2.new(1, -60, 0, 35),
+        Position = UDim2.new(0, 50, 0, 35),
+        BackgroundTransparency = 1,
+        Text = Config.Content or "Content",
+        TextColor3 = Theme.TextSecondary,
+        TextSize = 14,
+        Font = Enum.Font.Gotham,
+        TextXAlignment = Enum.TextXAlignment.Left,
+        TextWrapped = true,
+        Parent = Notification
+    })
+    
+    local ProgressBar = self:CreateElement("Frame", {
+        Name = "ProgressBar",
+        Size = UDim2.new(1, 0, 0, 3),
+        Position = UDim2.new(0, 0, 1, -3),
+        BackgroundColor3 = Theme.Primary,
+        BorderSizePixel = 0,
+        Parent = Notification
+    })
+    
+    -- Animação de entrada
+    self:Tween(Notification, {Position = UDim2.new(1, -310, 1, -90)}, 0.5, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
+    
+    -- Animação da barra de progresso
+    local ProgressTween = self:Tween(ProgressBar, {Size = UDim2.new(0, 0, 0, 3)}, Config.Time or 5)
+    
+    task.spawn(function()
+        ProgressTween.Completed:Wait()
+        self:Tween(Notification, {Position = UDim2.new(1, 10, 1, -90)}, 0.3)
+        task.wait(0.3)
+        Notification:Destroy()
+    end)
+    
+    return Notification
+end
+
+-- Sistema de Tooltip
+function AstraUI:CreateTooltip(Parent, Text)
+    local Tooltip = self:CreateElement("Frame", {
+        Name = "Tooltip",
+        Size = UDim2.new(0, 200, 0, 0),
+        BackgroundColor3 = self.Themes[self.CurrentTheme].Surface2,
+        BorderSizePixel = 0,
+        Visible = false,
+        ZIndex = 100,
+        Parent = Parent
+    })
+    
+    self:CreateRoundCorner(Tooltip, 6)
+    
+    local TextLabel = self:CreateElement("TextLabel", {
+        Name = "Text",
+        Size = UDim2.new(1, -10, 1, -10),
+        Position = UDim2.new(0, 5, 0, 5),
+        BackgroundTransparency = 1,
+        Text = Text,
+        TextColor3 = self.Themes[self.CurrentTheme].Text,
+        TextSize = 12,
+        Font = Enum.Font.Gotham,
+        TextWrapped = true,
+        Parent = Tooltip
+    })
+    
+    TextLabel:GetPropertyChangedSignal("TextBounds"):Connect(function()
+        Tooltip.Size = UDim2.new(0, 200, 0, TextLabel.TextBounds.Y + 10)
+    end)
+    
+    return Tooltip
+end
+
+-- Janela Principal
+function AstraUI:MakeWindow(Config)
+    local Window = {}
+    local Theme = self.Themes[self.CurrentTheme]
+    
+    -- Configurações
+    Window.Name = Config.Name or "Astra UI"
+    Window.HidePremium = Config.HidePremium or false
+    Window.SaveConfig = Config.SaveConfig or false
+    Window.ConfigFolder = Config.ConfigFolder or "AstraConfig"
+    Window.IntroEnabled = Config.IntroEnabled or true
+    Window.IntroText = Config.IntroText or "Astra UI"
+    Window.IntroIcon = Config.IntroIcon or ""
+    Window.Icon = Config.Icon or ""
+    Window.CloseCallback = Config.CloseCallback or function() end
+    
+    -- Criar GUI principal
+    local ScreenGui = self:CreateElement("ScreenGui", {
+        Name = "AstraUIMain",
+        DisplayOrder = 999,
+        ResetOnSpawn = false
+    })
+    
+    local MainContainer = self:CreateElement("Frame", {
+        Name = "MainContainer",
+        Size = UDim2.new(1, 0, 1, 0),
+        BackgroundTransparency = 1,
+        Parent = ScreenGui
+    })
+    
+    -- Container de notificações
+    self.NotificationContainer = self:CreateElement("Frame", {
+        Name = "NotificationContainer",
+        Size = UDim2.new(1, 0, 1, 0),
+        BackgroundTransparency = 1,
+        Parent = MainContainer
+    })
+    
+    -- Tela de introdução
+    if Window.IntroEnabled then
+        local IntroFrame = self:CreateElement("Frame", {
+            Name = "IntroFrame",
+            Size = UDim2.new(1, 0, 1, 0),
+            BackgroundColor3 = Theme.Background,
+            Parent = MainContainer
+        })
+        
+        local IntroIcon = self:CreateElement("ImageLabel", {
+            Name = "IntroIcon",
+            Size = UDim2.new(0, 100, 0, 100),
+            Position = UDim2.new(0.5, -50, 0.5, -70),
+            BackgroundTransparency = 1,
+            Image = Window.IntroIcon,
+            Parent = IntroFrame
+        })
+        
+        local IntroText = self:CreateElement("TextLabel", {
+            Name = "IntroText",
+            Size = UDim2.new(0, 300, 0, 40),
+            Position = UDim2.new(0.5, -150, 0.5, 40),
+            BackgroundTransparency = 1,
+            Text = Window.IntroText,
+            TextColor3 = Theme.Text,
+            TextSize = 24,
+            Font = Enum.Font.GothamBold,
+            Parent = IntroFrame
+        })
+        
+        -- Animação de introdução
+        task.spawn(function()
+            self:Tween(IntroIcon, {Rotation = 360}, 2, Enum.EasingStyle.Quad)
+            task.wait(2.5)
+            self:Tween(IntroFrame, {BackgroundTransparency = 1}, 0.5)
+            task.wait(0.5)
+            IntroFrame:Destroy()
         end)
     end
     
-    return notification.Id
-end
-
-function OrionLib:CreateNotificationUI(notification)
-    local screenGui = Instance.new("ScreenGui")
-    screenGui.Name = "OrionNotification_" .. notification.Id
-    screenGui.Parent = CoreGui
+    -- Janela principal
+    local MainFrame = self:CreateElement("Frame", {
+        Name = "MainFrame",
+        Size = UDim2.new(0, 600, 0, 450),
+        Position = UDim2.new(0.5, -300, 0.5, -225),
+        BackgroundColor3 = Theme.Background,
+        BorderSizePixel = 0,
+        ClipsDescendants = true,
+        Parent = MainContainer
+    })
     
-    local mainFrame = Instance.new("Frame")
-    mainFrame.Size = UDim2.new(0, 300, 0, 80)
-    mainFrame.Position = UDim2.new(1, -320, 1, -100)
-    mainFrame.BackgroundColor3 = self.Theme.Secondary
-    mainFrame.BorderSizePixel = 0
-    mainFrame.ZIndex = 100
-    
-    self:Roundify(mainFrame)
-    self:AddShadow(mainFrame)
-    
-    local titleLabel = Instance.new("TextLabel")
-    titleLabel.Size = UDim2.new(1, -20, 0, 20)
-    titleLabel.Position = UDim2.new(0, 10, 0, 10)
-    titleLabel.BackgroundTransparency = 1
-    titleLabel.Text = notification.Title
-    titleLabel.TextColor3 = self.Theme.Text
-    titleLabel.TextSize = 14
-    titleLabel.Font = Enum.Font.GothamBold
-    titleLabel.TextXAlignment = Enum.TextXAlignment.Left
-    titleLabel.Parent = mainFrame
-    
-    local contentLabel = Instance.new("TextLabel")
-    contentLabel.Size = UDim2.new(1, -20, 0, 40)
-    contentLabel.Position = UDim2.new(0, 10, 0, 35)
-    contentLabel.BackgroundTransparency = 1
-    contentLabel.Text = notification.Content
-    contentLabel.TextColor3 = self.Theme.SubText
-    contentLabel.TextSize = 12
-    contentLabel.Font = Enum.Font.Gotham
-    contentLabel.TextXAlignment = Enum.TextXAlignment.Left
-    contentLabel.TextYAlignment = Enum.TextYAlignment.Top
-    contentLabel.TextWrapped = true
-    contentLabel.Parent = mainFrame
-    
-    -- Type indicator
-    local typeIndicator = Instance.new("Frame")
-    typeIndicator.Size = UDim2.new(0, 4, 1, 0)
-    typeIndicator.Position = UDim2.new(0, 0, 0, 0)
-    typeIndicator.BackgroundColor3 = self.Theme[notification.Type] or self.Theme.Info
-    typeIndicator.BorderSizePixel = 0
-    typeIndicator.Parent = mainFrame
-    
-    local typeCorner = Instance.new("UICorner")
-    typeCorner.CornerRadius = UDim.new(0, 2)
-    typeCorner.Parent = typeIndicator
-    
-    -- Close button
-    local closeButton = Instance.new("TextButton")
-    closeButton.Size = UDim2.new(0, 20, 0, 20)
-    closeButton.Position = UDim2.new(1, -25, 0, 5)
-    closeButton.BackgroundTransparency = 1
-    closeButton.Text = "×"
-    closeButton.TextColor3 = self.Theme.SubText
-    closeButton.TextSize = 16
-    closeButton.Font = Enum.Font.GothamBold
-    closeButton.Parent = mainFrame
-    
-    closeButton.MouseButton1Click:Connect(function()
-        self:RemoveNotification(notification.Id)
-    end)
-    
-    mainFrame.Parent = screenGui
-    
-    -- Animate in
-    self:Tween(mainFrame, {Position = UDim2.new(1, -320, 1, -100)}, 0.3)
-    
-    return screenGui
-end
-
-function OrionLib:RemoveNotification(id)
-    for i, notif in pairs(self.Notifications.Active) do
-        if notif.Data.Id == id then
-            if notif.UI and notif.UI.Parent then
-                self:Tween(notif.UI.MainFrame, {Position = UDim2.new(1, 100, 1, -100)}, 0.3)
-                wait(0.3)
-                notif.UI:Destroy()
-            end
-            table.remove(self.Notifications.Active, i)
-            break
-        end
-    end
-end
-
--- Main Window System
-function OrionLib:MakeWindow(config)
-    config = config or {}
-    
-    local Window = {
-        Name = config.Name or "Orion UI",
-        HidePremium = config.HidePremium or false,
-        SaveConfig = config.SaveConfig or false,
-        ConfigFolder = config.ConfigFolder or "OrionConfig",
-        IntroEnabled = config.IntroEnabled or true,
-        IntroText = config.IntroText or "Orion UI",
-        Tabs = {},
-        Flags = {},
-        CurrentTab = nil,
-        Open = true
-    }
-    
-    -- Create main GUI
-    local ScreenGui = Instance.new("ScreenGui")
-    ScreenGui.Name = "OrionUI"
-    ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-    ScreenGui.Parent = CoreGui
-    
-    -- Background Blur
-    local blur = Instance.new("BlurEffect")
-    blur.Size = 0
-    blur.Parent = game:GetService("Lighting")
-    
-    -- Main Container
-    local MainContainer = Instance.new("Frame")
-    MainContainer.Name = "MainContainer"
-    MainContainer.Size = OrionLib.Config.DefaultSize
-    MainContainer.Position = UDim2.new(0.5, -300, 0.5, -200)
-    MainContainer.BackgroundColor3 = OrionLib.Theme.Background
-    MainContainer.BorderSizePixel = 0
-    MainContainer.ClipsDescendants = true
-    
-    OrionLib:Roundify(MainContainer)
-    OrionLib:AddShadow(MainContainer)
+    self:CreateRoundCorner(MainFrame, 12)
+    self:CreateStroke(MainFrame, Theme.Surface2, 2)
     
     -- Header
-    local Header = Instance.new("Frame")
-    Header.Name = "Header"
-    Header.Size = UDim2.new(1, 0, 0, 50)
-    Header.Position = UDim2.new(0, 0, 0, 0)
-    Header.BackgroundColor3 = OrionLib.Theme.Secondary
-    Header.BorderSizePixel = 0
-    
-    local HeaderCorner = Instance.new("UICorner")
-    HeaderCorner.CornerRadius = UDim.new(0, OrionLib.Config.Roundness)
-    HeaderCorner.Parent = Header
-    
-    -- Title with modern gradient
-    local Title = Instance.new("TextLabel")
-    Title.Name = "Title"
-    Title.Size = UDim2.new(0, 200, 1, 0)
-    Title.Position = UDim2.new(0, 20, 0, 0)
-    Title.BackgroundTransparency = 1
-    Title.Text = Window.Name
-    Title.TextColor3 = OrionLib.Theme.Text
-    Title.TextSize = 18
-    Title.Font = Enum.Font.GothamBold
-    Title.TextXAlignment = Enum.TextXAlignment.Left
-    Title.Parent = Header
-    
-    -- Control Buttons
-    local ControlContainer = Instance.new("Frame")
-    ControlContainer.Name = "ControlContainer"
-    ControlContainer.Size = UDim2.new(0, 80, 1, 0)
-    ControlContainer.Position = UDim2.new(1, -90, 0, 0)
-    ControlContainer.BackgroundTransparency = 1
-    ControlContainer.Parent = Header
-    
-    local ControlLayout = Instance.new("UIListLayout")
-    ControlLayout.FillDirection = Enum.FillDirection.Horizontal
-    ControlLayout.Padding = UDim.new(0, 5)
-    ControlLayout.Parent = ControlContainer
-    
-    -- Minimize Button
-    local MinimizeButton = OrionLib:Create("TextButton", {
-        Size = UDim2.new(0, 25, 0, 25),
-        BackgroundColor3 = OrionLib.Theme.Warning,
-        Text = "_",
-        TextColor3 = Color3.new(1, 1, 1),
-        TextSize = 14,
-        Font = Enum.Font.GothamBold,
-        Parent = ControlContainer
+    local Header = self:CreateElement("Frame", {
+        Name = "Header",
+        Size = UDim2.new(1, 0, 0, 45),
+        BackgroundColor3 = Theme.Surface,
+        BorderSizePixel = 0,
+        Parent = MainFrame
     })
-    OrionLib:Roundify(MinimizeButton)
     
-    -- Close Button
-    local CloseButton = OrionLib:Create("TextButton", {
+    self:CreateRoundCorner(Header, {TopLeft = 12, TopRight = 12, BottomLeft = 0, BottomRight = 0})
+    
+    local Title = self:CreateElement("TextLabel", {
+        Name = "Title",
+        Size = UDim2.new(0, 200, 1, 0),
+        Position = UDim2.new(0, 15, 0, 0),
+        BackgroundTransparency = 1,
+        Text = Window.Name,
+        TextColor3 = Theme.Text,
+        TextSize = 18,
+        Font = Enum.Font.GothamBold,
+        TextXAlignment = Enum.TextXAlignment.Left,
+        Parent = Header
+    })
+    
+    local CloseButton = self:CreateElement("ImageButton", {
+        Name = "CloseButton",
         Size = UDim2.new(0, 25, 0, 25),
-        BackgroundColor3 = OrionLib.Theme.Error,
+        Position = UDim2.new(1, -35, 0.5, -12.5),
+        BackgroundColor3 = Theme.Error,
+        Image = "",
+        Parent = Header
+    })
+    
+    self:CreateRoundCorner(CloseButton, 4)
+    
+    local CloseIcon = self:CreateElement("TextLabel", {
+        Name = "CloseIcon",
+        Size = UDim2.new(1, 0, 1, 0),
+        BackgroundTransparency = 1,
         Text = "×",
-        TextColor3 = Color3.new(1, 1, 1),
-        TextSize = 16,
+        TextColor3 = Theme.Text,
+        TextSize = 20,
         Font = Enum.Font.GothamBold,
-        Parent = ControlContainer
+        Parent = CloseButton
     })
-    OrionLib:Roundify(CloseButton)
     
-    -- Tab Container
-    local TabContainer = Instance.new("Frame")
-    TabContainer.Name = "TabContainer"
-    TabContainer.Size = UDim2.new(1, -40, 0, 40)
-    TabContainer.Position = UDim2.new(0, 20, 0, 60)
-    TabContainer.BackgroundTransparency = 1
-    TabContainer.Parent = MainContainer
+    -- Container de abas
+    local TabContainer = self:CreateElement("Frame", {
+        Name = "TabContainer",
+        Size = UDim2.new(0, 140, 1, -45),
+        Position = UDim2.new(0, 0, 0, 45),
+        BackgroundColor3 = Theme.Surface,
+        BorderSizePixel = 0,
+        Parent = MainFrame
+    })
     
-    local TabList = Instance.new("UIListLayout")
-    TabList.FillDirection = Enum.FillDirection.Horizontal
-    TabList.Padding = UDim.new(0, 10)
-    TabList.Parent = TabContainer
+    local TabListLayout = self:CreateElement("UIListLayout", {
+        SortOrder = Enum.SortOrder.LayoutOrder,
+        Padding = UDim.new(0, 5)
+    })
     
-    -- Content Area
-    local ContentArea = Instance.new("Frame")
-    ContentArea.Name = "ContentArea"
-    ContentArea.Size = UDim2.new(1, -40, 1, -120)
-    ContentArea.Position = UDim2.new(0, 20, 0, 110)
-    ContentArea.BackgroundTransparency = 1
-    ContentArea.ClipsDescendants = true
-    ContentArea.Parent = MainContainer
+    local TabPadding = self:CreatePadding(TabContainer, 10)
     
-    -- Make draggable
-    local dragging = false
-    local dragInput, dragStart, startPos
-
-    local function update(input)
-        local delta = input.Position - dragStart
-        MainContainer.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
-    end
-
-    Header.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 then
-            dragging = true
-            dragStart = input.Position
-            startPos = MainContainer.Position
+    -- Container de conteúdo
+    local ContentContainer = self:CreateElement("ScrollingFrame", {
+        Name = "ContentContainer",
+        Size = UDim2.new(1, -140, 1, -45),
+        Position = UDim2.new(0, 140, 0, 45),
+        BackgroundTransparency = 1,
+        BorderSizePixel = 0,
+        ScrollBarImageColor3 = Theme.Primary,
+        ScrollBarThickness = 3,
+        Parent = MainFrame
+    })
+    
+    local ContentLayout = self:CreateElement("UIListLayout", {
+        SortOrder = Enum.SortOrder.LayoutOrder,
+        Padding = UDim.new(0, 10)
+    })
+    
+    local ContentPadding = self:CreatePadding(ContentContainer, 15)
+    
+    -- Drag functionality
+    local Dragging = false
+    local DragInput, DragStart, StartPosition
+    
+    Header.InputBegan:Connect(function(Input)
+        if Input.UserInputType == Enum.UserInputType.MouseButton1 then
+            Dragging = true
+            DragStart = Input.Position
+            StartPosition = MainFrame.Position
             
-            input.Changed:Connect(function()
-                if input.UserInputState == Enum.UserInputState.End then
-                    dragging = false
+            Input.Changed:Connect(function()
+                if Input.UserInputState == Enum.UserInputState.End then
+                    Dragging = false
                 end
             end)
         end
     end)
-
-    Header.InputChanged:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseMovement then
-            dragInput = input
-        end
-    end)
-
-    UserInputService.InputChanged:Connect(function(input)
-        if input == dragInput and dragging then
-            update(input)
+    
+    Header.InputChanged:Connect(function(Input)
+        if Input.UserInputType == Enum.UserInputType.MouseMovement then
+            DragInput = Input
         end
     end)
     
-    -- Button Events
-    MinimizeButton.MouseButton1Click:Connect(function()
-        Window.Open = not Window.Open
-        if Window.Open then
-            OrionLib:Tween(MainContainer, {Size = OrionLib.Config.DefaultSize}, 0.3)
-            OrionLib:Tween(blur, {Size = OrionLib.Config.BlurIntensity}, 0.3)
-        else
-            OrionLib:Tween(MainContainer, {Size = UDim2.new(0, 0, 0, 0)}, 0.3)
-            OrionLib:Tween(blur, {Size = 0}, 0.3)
+    UserInputService.InputChanged:Connect(function(Input)
+        if Input == DragInput and Dragging then
+            local Delta = Input.Position - DragStart
+            MainFrame.Position = UDim2.new(
+                StartPosition.X.Scale, 
+                StartPosition.X.Offset + Delta.X,
+                StartPosition.Y.Scale, 
+                StartPosition.Y.Offset + Delta.Y
+            )
         end
     end)
     
+    -- Close button functionality
     CloseButton.MouseButton1Click:Connect(function()
-        OrionLib:Tween(MainContainer, {Size = UDim2.new(0, 0, 0, 0)}, 0.3)
-        OrionLib:Tween(blur, {Size = 0}, 0.3)
-        wait(0.3)
-        ScreenGui:Destroy()
-        blur:Destroy()
+        Window.CloseCallback()
+        self:Destroy()
     end)
     
-    Header.Parent = MainContainer
-    MainContainer.Parent = ScreenGui
-    
-    -- Initialize blur
-    OrionLib:Tween(blur, {Size = OrionLib.Config.BlurIntensity}, 0.5)
-    
-    -- Window Methods
-    function Window:MakeTab(tabConfig)
-        tabConfig = tabConfig or {}
+    -- Função para criar abas
+    function Window:MakeTab(Config)
+        local Tab = {}
+        Tab.Name = Config.Name or "Nova Aba"
+        Tab.Icon = Config.Icon or ""
+        Tab.PremiumOnly = Config.PremiumOnly or false
+        Tab.Visible = false
         
-        local Tab = {
-            Name = tabConfig.Name or "New Tab",
-            Icon = tabConfig.Icon or "📄",
-            Content = {}
-        }
-        
-        -- Modern Tab Button
-        local TabButton = OrionLib:Create("TextButton", {
-            Size = UDim2.new(0, 120, 0, 35),
-            BackgroundColor3 = OrionLib.Theme.Secondary,
-            Text = Tab.Icon .. " " .. Tab.Name,
-            TextColor3 = OrionLib.Theme.SubText,
-            TextSize = 13,
-            Font = Enum.Font.Gotham,
+        -- Botão da aba
+        local TabButton = self:CreateElement("TextButton", {
+            Name = "TabButton_" .. Config.Name,
+            Size = UDim2.new(1, 0, 0, 40),
+            BackgroundColor3 = Theme.Surface2,
+            Text = "",
             AutoButtonColor = false,
             Parent = TabContainer
         })
-        OrionLib:Roundify(TabButton)
         
-        -- Tab Content Frame
-        local TabFrame = OrionLib:Create("ScrollingFrame", {
+        self:CreateRoundCorner(TabButton, 6)
+        
+        local ButtonContent = self:CreateElement("Frame", {
+            Name = "Content",
             Size = UDim2.new(1, 0, 1, 0),
-            Position = UDim2.new(0, 0, 0, 0),
             BackgroundTransparency = 1,
-            ScrollBarThickness = 3,
-            ScrollBarImageColor3 = OrionLib.Theme.Accent,
-            ScrollBarImageTransparency = 0.5,
+            Parent = TabButton
+        })
+        
+        local TabIcon = self:CreateElement("ImageLabel", {
+            Name = "Icon",
+            Size = UDim2.new(0, 20, 0, 20),
+            Position = UDim2.new(0, 10, 0.5, -10),
+            BackgroundTransparency = 1,
+            Image = Config.Icon or "rbxassetid://7072718364",
+            ImageColor3 = Theme.TextSecondary,
+            Parent = ButtonContent
+        })
+        
+        local TabLabel = self:CreateElement("TextLabel", {
+            Name = "Label",
+            Size = UDim2.new(1, -40, 1, 0),
+            Position = UDim2.new(0, 35, 0, 0),
+            BackgroundTransparency = 1,
+            Text = Config.Name,
+            TextColor3 = Theme.TextSecondary,
+            TextSize = 14,
+            Font = Enum.Font.Gotham,
+            TextXAlignment = Enum.TextXAlignment.Left,
+            Parent = ButtonContent
+        })
+        
+        local TabIndicator = self:CreateElement("Frame", {
+            Name = "Indicator",
+            Size = UDim2.new(0, 3, 0, 0),
+            Position = UDim2.new(0, 0, 0.5, 0),
+            BackgroundColor3 = Theme.Primary,
+            BorderSizePixel = 0,
             Visible = false,
-            Parent = ContentArea
+            Parent = TabButton
         })
         
-        local TabListLayout = OrionLib:Create("UIListLayout", {
-            Padding = UDim.new(0, 10),
-            Parent = TabFrame
+        self:CreateRoundCorner(TabIndicator, 2)
+        
+        -- Conteúdo da aba
+        local TabContent = self:CreateElement("ScrollingFrame", {
+            Name = "TabContent_" .. Config.Name,
+            Size = UDim2.new(1, 0, 1, 0),
+            BackgroundTransparency = 1,
+            Visible = false,
+            ScrollBarImageColor3 = Theme.Primary,
+            ScrollBarThickness = 3,
+            Parent = ContentContainer
         })
         
-        local TabPadding = OrionLib:Create("UIPadding", {
-            PaddingTop = UDim.new(0, 5),
-            PaddingLeft = UDim.new(0, 5),
-            PaddingRight = UDim.new(0, 5),
-            Parent = TabFrame
+        local TabContentLayout = self:CreateElement("UIListLayout", {
+            SortOrder = Enum.SortOrder.LayoutOrder,
+            Padding = UDim.new(0, 10)
         })
         
-        -- Tab selection logic
-        TabButton.MouseButton1Click:Connect(function()
-            -- Hide all tabs
-            for _, otherTab in pairs(Window.Tabs) do
-                otherTab.Frame.Visible = false
-                OrionLib:Tween(otherTab.Button, {
-                    BackgroundColor3 = OrionLib.Theme.Secondary,
-                    TextColor3 = OrionLib.Theme.SubText
-                }, 0.2)
+        local TabContentPadding = self:CreatePadding(TabContent, 5)
+        
+        -- Função para ativar/desativar aba
+        function Tab:SetActive(Active)
+            if Active then
+                -- Desativar outras abas
+                for _, OtherTab in pairs(self.Tabs or {}) do
+                    if OtherTab ~= Tab then
+                        OtherTab:SetActive(false)
+                    end
+                end
+                
+                -- Ativar esta aba
+                self:Tween(TabIndicator, {Size = UDim2.new(0, 3, 0, 20), Position = UDim2.new(0, 0, 0.5, -10)}, 0.2)
+                TabIndicator.Visible = true
+                self:Tween(TabButton, {BackgroundColor3 = Theme.Surface}, 0.2)
+                self:Tween(TabLabel, {TextColor3 = Theme.Text}, 0.2)
+                self:Tween(TabIcon, {ImageColor3 = Theme.Text}, 0.2)
+                TabContent.Visible = true
+                Tab.Visible = true
+            else
+                self:Tween(TabIndicator, {Size = UDim2.new(0, 3, 0, 0), Position = UDim2.new(0, 0, 0.5, 0)}, 0.2)
+                task.delay(0.2, function()
+                    if not Tab.Visible then
+                        TabIndicator.Visible = false
+                    end
+                end)
+                self:Tween(TabButton, {BackgroundColor3 = Theme.Surface2}, 0.2)
+                self:Tween(TabLabel, {TextColor3 = Theme.TextSecondary}, 0.2)
+                self:Tween(TabIcon, {ImageColor3 = Theme.TextSecondary}, 0.2)
+                TabContent.Visible = false
+                Tab.Visible = false
             end
-            
-            -- Show this tab
-            TabFrame.Visible = true
-            OrionLib:Tween(TabButton, {
-                BackgroundColor3 = OrionLib.Theme.Accent,
-                TextColor3 = Color3.new(1, 1, 1)
-            }, 0.2)
-            
-            Window.CurrentTab = Tab
-        end)
-        
-        Tab.Button = TabButton
-        Tab.Frame = TabFrame
-        table.insert(Window.Tabs, Tab)
-        
-        -- Make first tab active
-        if #Window.Tabs == 1 then
-            TabButton.BackgroundColor3 = OrionLib.Theme.Accent
-            TabButton.TextColor3 = Color3.new(1, 1, 1)
-            TabFrame.Visible = true
-            Window.CurrentTab = Tab
         end
         
-        -- Enhanced Tab Methods
-        function Tab:AddButton(buttonConfig)
-            buttonConfig = buttonConfig or {}
+        -- Click handler
+        TabButton.MouseButton1Click:Connect(function()
+            Tab:SetActive(true)
+        end)
+        
+        -- Adicionar elementos (continuará no próximo código devido ao limite de caracteres)
+        function Tab:AddButton(Config)
+            local Button = {}
             
-            local Button = {
-                Name = buttonConfig.Name or "Button",
-                Callback = buttonConfig.Callback or function() end
-            }
-            
-            local ButtonFrame = OrionLib:Create("Frame", {
-                Size = UDim2.new(1, -10, 0, 40),
-                BackgroundColor3 = OrionLib.Theme.Secondary,
-                BorderSizePixel = 0
+            local ButtonFrame = self:CreateElement("TextButton", {
+                Name = "Button",
+                Size = UDim2.new(1, 0, 0, 40),
+                BackgroundColor3 = Theme.Surface2,
+                Text = "",
+                AutoButtonColor = false,
+                Parent = TabContent
             })
-            OrionLib:Roundify(ButtonFrame)
             
-            local ButtonLabel = OrionLib:Create("TextLabel", {
+            self:CreateRoundCorner(ButtonFrame, 6)
+            self:CreateStroke(ButtonFrame, Theme.Surface, 1)
+            
+            local ButtonLabel = self:CreateElement("TextLabel", {
+                Name = "Label",
                 Size = UDim2.new(1, -20, 1, 0),
                 Position = UDim2.new(0, 10, 0, 0),
                 BackgroundTransparency = 1,
-                Text = Button.Name,
-                TextColor3 = OrionLib.Theme.Text,
+                Text = Config.Name,
+                TextColor3 = Theme.Text,
                 TextSize = 14,
                 Font = Enum.Font.Gotham,
                 TextXAlignment = Enum.TextXAlignment.Left,
                 Parent = ButtonFrame
             })
             
-            local ButtonButton = OrionLib:Create("TextButton", {
-                Size = UDim2.new(1, 0, 1, 0),
+            local ButtonIcon = self:CreateElement("ImageLabel", {
+                Name = "Icon",
+                Size = UDim2.new(0, 20, 0, 20),
+                Position = UDim2.new(1, -30, 0.5, -10),
                 BackgroundTransparency = 1,
-                Text = "",
-                ZIndex = 2,
+                Image = "rbxassetid://7072721530",
+                ImageColor3 = Theme.TextSecondary,
                 Parent = ButtonFrame
             })
             
-            -- Enhanced hover effects
-            ButtonButton.MouseEnter:Connect(function()
-                OrionLib:Tween(ButtonFrame, {
-                    BackgroundColor3 = OrionLib.Theme.LightAccent,
-                    Size = UDim2.new(1, -5, 0, 40)
-                }, 0.2)
+            -- Hover effects
+            ButtonFrame.MouseEnter:Connect(function()
+                self:Tween(ButtonFrame, {BackgroundColor3 = Theme.Surface}, 0.2)
+                self:Tween(ButtonIcon, {ImageColor3 = Theme.Primary}, 0.2)
             end)
             
-            ButtonButton.MouseLeave:Connect(function()
-                OrionLib:Tween(ButtonFrame, {
-                    BackgroundColor3 = OrionLib.Theme.Secondary,
-                    Size = UDim2.new(1, -10, 0, 40)
-                }, 0.2)
+            ButtonFrame.MouseLeave:Connect(function()
+                self:Tween(ButtonFrame, {BackgroundColor3 = Theme.Surface2}, 0.2)
+                self:Tween(ButtonIcon, {ImageColor3 = Theme.TextSecondary}, 0.2)
             end)
             
-            ButtonButton.MouseButton1Click:Connect(function()
-                -- Click animation
-                OrionLib:Tween(ButtonFrame, {
-                    BackgroundColor3 = OrionLib.Theme.DarkAccent,
-                    Size = UDim2.new(1, -15, 0, 35)
-                }, 0.1)
-                wait(0.1)
-                OrionLib:Tween(ButtonFrame, {
-                    BackgroundColor3 = OrionLib.Theme.LightAccent,
-                    Size = UDim2.new(1, -10, 0, 40)
-                }, 0.1)
-                
-                -- Execute callback
-                Button.Callback()
+            ButtonFrame.MouseButton1Click:Connect(function()
+                self:Tween(ButtonFrame, {BackgroundColor3 = Theme.Primary}, 0.1)
+                self:Tween(ButtonFrame, {BackgroundColor3 = Theme.Surface2}, 0.1)
+                Config.Callback()
             end)
             
-            ButtonFrame.Parent = Tab.Frame
-            Button.Instance = ButtonFrame
             return Button
         end
         
-        function Tab:AddToggle(toggleConfig)
-            toggleConfig = toggleConfig or {}
+        function Tab:AddToggle(Config)
+            local Toggle = {}
+            local Value = Config.Default or false
             
-            local Toggle = {
-                Name = toggleConfig.Name or "Toggle",
-                Default = toggleConfig.Default or false,
-                Callback = toggleConfig.Callback or function() end,
-                Flag = toggleConfig.Flag,
-                Value = toggleConfig.Default or false
-            }
-            
-            local ToggleFrame = OrionLib:Create("Frame", {
-                Size = UDim2.new(1, -10, 0, 40),
-                BackgroundColor3 = OrionLib.Theme.Secondary,
-                BorderSizePixel = 0
-            })
-            OrionLib:Roundify(ToggleFrame)
-            
-            local ToggleLabel = OrionLib:Create("TextLabel", {
-                Size = UDim2.new(0.7, -10, 1, 0),
-                Position = UDim2.new(0, 10, 0, 0),
+            local ToggleFrame = self:CreateElement("Frame", {
+                Name = "Toggle",
+                Size = UDim2.new(1, 0, 0, 40),
                 BackgroundTransparency = 1,
-                Text = Toggle.Name,
-                TextColor3 = OrionLib.Theme.Text,
+                Parent = TabContent
+            })
+            
+            local ToggleLabel = self:CreateElement("TextLabel", {
+                Name = "Label",
+                Size = UDim2.new(0.7, 0, 1, 0),
+                BackgroundTransparency = 1,
+                Text = Config.Name,
+                TextColor3 = Theme.Text,
                 TextSize = 14,
                 Font = Enum.Font.Gotham,
                 TextXAlignment = Enum.TextXAlignment.Left,
                 Parent = ToggleFrame
             })
             
-            local ToggleButton = OrionLib:Create("TextButton", {
+            local ToggleButton = self:CreateElement("TextButton", {
+                Name = "ToggleButton",
                 Size = UDim2.new(0, 50, 0, 25),
                 Position = UDim2.new(1, -60, 0.5, -12.5),
-                BackgroundColor3 = OrionLib.Theme.Secondary,
+                BackgroundColor3 = Value and Theme.Primary or Theme.Surface2,
                 Text = "",
                 AutoButtonColor = false,
                 Parent = ToggleFrame
             })
-            OrionLib:Roundify(ToggleButton)
             
-            local ToggleKnob = OrionLib:Create("Frame", {
+            self:CreateRoundCorner(ToggleButton, 12)
+            self:CreateStroke(ToggleButton, Theme.Surface, 1)
+            
+            local ToggleKnob = self:CreateElement("Frame", {
+                Name = "Knob",
                 Size = UDim2.new(0, 21, 0, 21),
-                Position = UDim2.new(0, 2, 0, 2),
-                BackgroundColor3 = Color3.new(1, 1, 1),
-                BorderSizePixel = 0,
+                Position = UDim2.new(0, Value and 27 or 2, 0.5, -10.5),
+                BackgroundColor3 = Theme.Text,
                 Parent = ToggleButton
             })
-            OrionLib:Roundify(ToggleKnob)
             
-            local function updateToggle()
-                if Toggle.Value then
-                    OrionLib:Tween(ToggleButton, {
-                        BackgroundColor3 = OrionLib.Theme.Success
-                    }, 0.2)
-                    OrionLib:Tween(ToggleKnob, {
-                        Position = UDim2.new(0, 27, 0, 2)
-                    }, 0.2)
-                else
-                    OrionLib:Tween(ToggleButton, {
-                        BackgroundColor3 = OrionLib.Theme.Secondary
-                    }, 0.2)
-                    OrionLib:Tween(ToggleKnob, {
-                        Position = UDim2.new(0, 2, 0, 2)
-                    }, 0.2)
-                end
-                Toggle.Callback(Toggle.Value)
+            self:CreateRoundCorner(ToggleKnob, 10)
+            
+            function Toggle:Set(NewValue)
+                Value = NewValue
+                self:Tween(ToggleButton, {BackgroundColor3 = Value and Theme.Primary or Theme.Surface2}, 0.2)
+                self:Tween(ToggleKnob, {Position = UDim2.new(0, Value and 27 or 2, 0.5, -10.5)}, 0.2)
+                Config.Callback(Value)
             end
             
             ToggleButton.MouseButton1Click:Connect(function()
-                Toggle.Value = not Toggle.Value
-                updateToggle()
+                Toggle:Set(not Value)
             end)
             
-            -- Initialize
-            updateToggle()
-            
-            ToggleFrame.Parent = Tab.Frame
-            Toggle.Instance = ToggleFrame
-            
-            if Toggle.Flag then
-                Window.Flags = Window.Flags or {}
-                Window.Flags[Toggle.Flag] = Toggle
+            if Config.Flag then
+                self.Flags[Config.Flag] = Toggle
             end
             
             return Toggle
         end
         
-        function Tab:AddSlider(sliderConfig)
-            sliderConfig = sliderConfig or {}
-            
-            local Slider = {
-                Name = sliderConfig.Name or "Slider",
-                Min = sliderConfig.Min or 0,
-                Max = sliderConfig.Max or 100,
-                Default = sliderConfig.Default or 50,
-                Callback = sliderConfig.Callback or function() end,
-                Value = sliderConfig.Default or 50,
-                Precision = sliderConfig.Precision or 1
-            }
-            
-            local SliderFrame = OrionLib:Create("Frame", {
-                Size = UDim2.new(1, -10, 0, 60),
-                BackgroundColor3 = OrionLib.Theme.Secondary,
-                BorderSizePixel = 0
-            })
-            OrionLib:Roundify(SliderFrame)
-            
-            local SliderLabel = OrionLib:Create("TextLabel", {
-                Size = UDim2.new(1, -20, 0, 20),
-                Position = UDim2.new(0, 10, 0, 5),
-                BackgroundTransparency = 1,
-                Text = Slider.Name .. ": " .. Slider.Value,
-                TextColor3 = OrionLib.Theme.Text,
-                TextSize = 14,
-                Font = Enum.Font.Gotham,
-                TextXAlignment = Enum.TextXAlignment.Left,
-                Parent = SliderFrame
-            })
-            
-            local SliderTrack = OrionLib:Create("Frame", {
-                Size = UDim2.new(1, -20, 0, 4),
-                Position = UDim2.new(0, 10, 0, 35),
-                BackgroundColor3 = OrionLib.Theme.Background,
-                BorderSizePixel = 0,
-                Parent = SliderFrame
-            })
-            OrionLib:Roundify(SliderTrack)
-            
-            local SliderFill = OrionLib:Create("Frame", {
-                Size = UDim2.new(0, 0, 1, 0),
-                Position = UDim2.new(0, 0, 0, 0),
-                BackgroundColor3 = OrionLib.Theme.Accent,
-                BorderSizePixel = 0,
-                Parent = SliderTrack
-            })
-            OrionLib:Roundify(SliderFill)
-            
-            local SliderButton = OrionLib:Create("TextButton", {
-                Size = UDim2.new(0, 20, 0, 20),
-                Position = UDim2.new(0, -10, 0.5, -10),
-                BackgroundColor3 = Color3.new(1, 1, 1),
-                Text = "",
-                AutoButtonColor = false,
-                Parent = SliderTrack
-            })
-            OrionLib:Roundify(SliderButton)
-            
-            local function updateSlider(value)
-                local percent = (value - Slider.Min) / (Slider.Max - Slider.Min)
-                SliderFill.Size = UDim2.new(percent, 0, 1, 0)
-                SliderButton.Position = UDim2.new(percent, -10, 0.5, -10)
-                SliderLabel.Text = Slider.Name .. ": " .. value
-                Slider.Value = value
-                Slider.Callback(value)
-            end
-            
-            local sliding = false
-            SliderButton.MouseButton1Down:Connect(function()
-                sliding = true
-                
-                local connection
-                connection = UserInputService.InputChanged:Connect(function(input)
-                    if input.UserInputType == Enum.UserInputType.MouseMovement and sliding then
-                        local mousePos = UserInputService:GetMouseLocation()
-                        local trackPos = SliderTrack.AbsolutePosition.X
-                        local trackSize = SliderTrack.AbsoluteSize.X
-                        local percent = math.clamp((mousePos.X - trackPos) / trackSize, 0, 1)
-                        local value = math.floor(Slider.Min + (Slider.Max - Slider.Min) * percent)
-                        updateSlider(value)
-                    end
-                end)
-                
-                UserInputService.InputEnded:Connect(function(input)
-                    if input.UserInputType == Enum.UserInputType.MouseButton1 then
-                        sliding = false
-                        if connection then
-                            connection:Disconnect()
-                        end
-                    end
-                end)
-            end)
-            
-            -- Initialize
-            updateSlider(Slider.Default)
-            
-            SliderFrame.Parent = Tab.Frame
-            Slider.Instance = SliderFrame
-            
-            return Slider
+        -- Ativar primeira aba
+        if not Window.FirstTab then
+            Window.FirstTab = Tab
+            Tab:SetActive(true)
         end
         
-        function Tab:AddDropdown(dropdownConfig)
-            dropdownConfig = dropdownConfig or {}
-            
-            local Dropdown = {
-                Name = dropdownConfig.Name or "Dropdown",
-                Options = dropdownConfig.Options or {},
-                Default = dropdownConfig.Default,
-                Callback = dropdownConfig.Callback or function() end,
-                Value = dropdownConfig.Default,
-                Open = false
-            }
-            
-            local DropdownFrame = OrionLib:Create("Frame", {
-                Size = UDim2.new(1, -10, 0, 40),
-                BackgroundColor3 = OrionLib.Theme.Secondary,
-                ClipsDescendants = true,
-                BorderSizePixel = 0
-            })
-            OrionLib:Roundify(DropdownFrame)
-            
-            local DropdownLabel = OrionLib:Create("TextLabel", {
-                Size = UDim2.new(0.7, -10, 1, 0),
-                Position = UDim2.new(0, 10, 0, 0),
-                BackgroundTransparency = 1,
-                Text = Dropdown.Name,
-                TextColor3 = OrionLib.Theme.Text,
-                TextSize = 14,
-                Font = Enum.Font.Gotham,
-                TextXAlignment = Enum.TextXAlignment.Left,
-                Parent = DropdownFrame
-            })
-            
-            local DropdownButton = OrionLib:Create("TextButton", {
-                Size = UDim2.new(0, 100, 0, 30),
-                Position = UDim2.new(1, -110, 0.5, -15),
-                BackgroundColor3 = OrionLib.Theme.Background,
-                Text = Dropdown.Value or "Select...",
-                TextColor3 = OrionLib.Theme.Text,
-                TextSize = 12,
-                Font = Enum.Font.Gotham,
-                Parent = DropdownFrame
-            })
-            OrionLib:Roundify(DropdownButton)
-            
-            local DropdownList = OrionLib:Create("Frame", {
-                Size = UDim2.new(1, -20, 0, 0),
-                Position = UDim2.new(0, 10, 1, 5),
-                BackgroundColor3 = OrionLib.Theme.Background,
-                Visible = false,
-                Parent = DropdownFrame
-            })
-            OrionLib:Roundify(DropdownList)
-            
-            local DropdownListLayout = OrionLib:Create("UIListLayout", {
-                Padding = UDim.new(0, 2),
-                Parent = DropdownList
-            })
-            
-            local function updateDropdown()
-                DropdownButton.Text = Dropdown.Value or "Select..."
-                Dropdown.Callback(Dropdown.Value)
-            end
-            
-            local function toggleDropdown()
-                Dropdown.Open = not Dropdown.Open
-                if Dropdown.Open then
-                    DropdownFrame.Size = UDim2.new(1, -10, 0, 40 + (#Dropdown.Options * 32))
-                    DropdownList.Visible = true
-                else
-                    DropdownFrame.Size = UDim2.new(1, -10, 0, 40)
-                    DropdownList.Visible = false
-                end
-            end
-            
-            -- Create option buttons
-            for _, option in pairs(Dropdown.Options) do
-                local OptionButton = OrionLib:Create("TextButton", {
-                    Size = UDim2.new(1, 0, 0, 30),
-                    BackgroundColor3 = OrionLib.Theme.Secondary,
-                    Text = option,
-                    TextColor3 = OrionLib.Theme.Text,
-                    TextSize = 12,
-                    Font = Enum.Font.Gotham,
-                    AutoButtonColor = false,
-                    Parent = DropdownList
-                })
-                OrionLib:Roundify(OptionButton)
-                
-                OptionButton.MouseButton1Click:Connect(function()
-                    Dropdown.Value = option
-                    updateDropdown()
-                    toggleDropdown()
-                end)
-            end
-            
-            DropdownButton.MouseButton1Click:Connect(toggleDropdown)
-            
-            -- Initialize
-            if Dropdown.Default then
-                Dropdown.Value = Dropdown.Default
-                updateDropdown()
-            end
-            
-            DropdownFrame.Parent = Tab.Frame
-            Dropdown.Instance = DropdownFrame
-            
-            return Dropdown
-        end
-        
-        function Tab:AddLabel(labelConfig)
-            labelConfig = labelConfig or {}
-            
-            local Label = {
-                Text = labelConfig.Text or "Label"
-            }
-            
-            local LabelFrame = OrionLib:Create("Frame", {
-                Size = UDim2.new(1, -10, 0, 30),
-                BackgroundTransparency = 1,
-                Parent = Tab.Frame
-            })
-            
-            local LabelText = OrionLib:Create("TextLabel", {
-                Size = UDim2.new(1, -20, 1, 0),
-                Position = UDim2.new(0, 10, 0, 0),
-                BackgroundTransparency = 1,
-                Text = Label.Text,
-                TextColor3 = OrionLib.Theme.SubText,
-                TextSize = 14,
-                Font = Enum.Font.Gotham,
-                TextXAlignment = Enum.TextXAlignment.Left,
-                Parent = LabelFrame
-            })
-            
-            Label.Instance = LabelFrame
-            return Label
-        end
-        
-        function Tab:AddSection(sectionConfig)
-            sectionConfig = sectionConfig or {}
-            
-            local Section = {
-                Name = sectionConfig.Name or "Section"
-            }
-            
-            local SectionFrame = OrionLib:Create("Frame", {
-                Size = UDim2.new(1, -10, 0, 40),
-                BackgroundTransparency = 1,
-                Parent = Tab.Frame
-            })
-            
-            local SectionLine = OrionLib:Create("Frame", {
-                Size = UDim2.new(1, 0, 0, 1),
-                Position = UDim2.new(0, 0, 0.5, 0),
-                BackgroundColor3 = OrionLib.Theme.Accent,
-                BorderSizePixel = 0,
-                Parent = SectionFrame
-            })
-            
-            local SectionText = OrionLib:Create("TextLabel", {
-                Size = UDim2.new(0, 100, 0, 20),
-                Position = UDim2.new(0.5, -50, 0.5, -10),
-                BackgroundColor3 = OrionLib.Theme.Background,
-                Text = Section.Name,
-                TextColor3 = OrionLib.Theme.Accent,
-                TextSize = 12,
-                Font = Enum.Font.GothamBold,
-                Parent = SectionFrame
-            })
-            
-            Section.Instance = SectionFrame
-            return Section
-        end
-        
-        function Tab:AddTextbox(textboxConfig)
-            textboxConfig = textboxConfig or {}
-            
-            local Textbox = {
-                Name = textboxConfig.Name or "Textbox",
-                Default = textboxConfig.Default or "",
-                Placeholder = textboxConfig.Placeholder or "Enter text...",
-                Callback = textboxConfig.Callback or function() end,
-                Value = textboxConfig.Default or ""
-            }
-            
-            local TextboxFrame = OrionLib:Create("Frame", {
-                Size = UDim2.new(1, -10, 0, 40),
-                BackgroundColor3 = OrionLib.Theme.Secondary,
-                BorderSizePixel = 0
-            })
-            OrionLib:Roundify(TextboxFrame)
-            
-            local TextboxLabel = OrionLib:Create("TextLabel", {
-                Size = UDim2.new(0.3, -10, 1, 0),
-                Position = UDim2.new(0, 10, 0, 0),
-                BackgroundTransparency = 1,
-                Text = Textbox.Name,
-                TextColor3 = OrionLib.Theme.Text,
-                TextSize = 14,
-                Font = Enum.Font.Gotham,
-                TextXAlignment = Enum.TextXAlignment.Left,
-                Parent = TextboxFrame
-            })
-            
-            local TextboxInput = OrionLib:Create("TextBox", {
-                Size = UDim2.new(0.7, -10, 0, 30),
-                Position = UDim2.new(0.3, 0, 0.5, -15),
-                BackgroundColor3 = OrionLib.Theme.Background,
-                TextColor3 = OrionLib.Theme.Text,
-                Text = Textbox.Value,
-                PlaceholderText = Textbox.Placeholder,
-                PlaceholderColor3 = OrionLib.Theme.Disabled,
-                TextSize = 12,
-                Font = Enum.Font.Gotham,
-                ClearTextOnFocus = false,
-                Parent = TextboxFrame
-            })
-            OrionLib:Roundify(TextboxInput)
-            
-            TextboxInput.FocusLost:Connect(function(enterPressed)
-                Textbox.Value = TextboxInput.Text
-                Textbox.Callback(Textbox.Value, enterPressed)
-            end)
-            
-            TextboxFrame.Parent = Tab.Frame
-            Textbox.Instance = TextboxFrame
-            
-            return Textbox
-        end
-        
-        function Tab:AddBind(bindConfig)
-            bindConfig = bindConfig or {}
-            
-            local Bind = {
-                Name = bindConfig.Name or "Bind",
-                Default = bindConfig.Default or Enum.KeyCode.LeftControl,
-                Callback = bindConfig.Callback or function() end,
-                Value = bindConfig.Default or Enum.KeyCode.LeftControl,
-                Listening = false
-            }
-            
-            local BindFrame = OrionLib:Create("Frame", {
-                Size = UDim2.new(1, -10, 0, 40),
-                BackgroundColor3 = OrionLib.Theme.Secondary,
-                BorderSizePixel = 0
-            })
-            OrionLib:Roundify(BindFrame)
-            
-            local BindLabel = OrionLib:Create("TextLabel", {
-                Size = UDim2.new(0.7, -10, 1, 0),
-                Position = UDim2.new(0, 10, 0, 0),
-                BackgroundTransparency = 1,
-                Text = Bind.Name,
-                TextColor3 = OrionLib.Theme.Text,
-                TextSize = 14,
-                Font = Enum.Font.Gotham,
-                TextXAlignment = Enum.TextXAlignment.Left,
-                Parent = BindFrame
-            })
-            
-            local BindButton = OrionLib:Create("TextButton", {
-                Size = UDim2.new(0, 80, 0, 25),
-                Position = UDim2.new(1, -90, 0.5, -12.5),
-                BackgroundColor3 = OrionLib.Theme.Background,
-                Text = Bind.Value.Name,
-                TextColor3 = OrionLib.Theme.Text,
-                TextSize = 11,
-                Font = Enum.Font.Gotham,
-                Parent = BindFrame
-            })
-            OrionLib:Roundify(BindButton)
-            
-            local function updateBind()
-                BindButton.Text = Bind.Value.Name
-            end
-            
-            local function startListening()
-                Bind.Listening = true
-                BindButton.Text = "..."
-                BindButton.BackgroundColor3 = OrionLib.Theme.Accent
-                
-                local connection
-                connection = UserInputService.InputBegan:Connect(function(input, gameProcessed)
-                    if gameProcessed then return end
-                    
-                    if input.UserInputType == Enum.UserInputType.Keyboard then
-                        Bind.Value = input.KeyCode
-                        updateBind()
-                        Bind.Callback(Bind.Value)
-                        Bind.Listening = false
-                        BindButton.BackgroundColor3 = OrionLib.Theme.Background
-                        connection:Disconnect()
-                    end
-                end)
-            end
-            
-            BindButton.MouseButton1Click:Connect(startListening)
-            
-            -- Initialize
-            updateBind()
-            
-            BindFrame.Parent = Tab.Frame
-            Bind.Instance = BindFrame
-            
-            return Bind
-        end
-        
-        function Tab:AddColorpicker(colorConfig)
-            colorConfig = colorConfig or {}
-            
-            local Colorpicker = {
-                Name = colorConfig.Name or "Colorpicker",
-                Default = colorConfig.Default or Color3.new(1, 1, 1),
-                Callback = colorConfig.Callback or function() end,
-                Value = colorConfig.Default or Color3.new(1, 1, 1)
-            }
-            
-            local ColorpickerFrame = OrionLib:Create("Frame", {
-                Size = UDim2.new(1, -10, 0, 40),
-                BackgroundColor3 = OrionLib.Theme.Secondary,
-                BorderSizePixel = 0
-            })
-            OrionLib:Roundify(ColorpickerFrame)
-            
-            local ColorpickerLabel = OrionLib:Create("TextLabel", {
-                Size = UDim2.new(0.7, -10, 1, 0),
-                Position = UDim2.new(0, 10, 0, 0),
-                BackgroundTransparency = 1,
-                Text = Colorpicker.Name,
-                TextColor3 = OrionLib.Theme.Text,
-                TextSize = 14,
-                Font = Enum.Font.Gotham,
-                TextXAlignment = Enum.TextXAlignment.Left,
-                Parent = ColorpickerFrame
-            })
-            
-            local ColorpickerButton = OrionLib:Create("TextButton", {
-                Size = UDim2.new(0, 50, 0, 25),
-                Position = UDim2.new(1, -60, 0.5, -12.5),
-                BackgroundColor3 = Colorpicker.Value,
-                Text = "",
-                Parent = ColorpickerFrame
-            })
-            OrionLib:Roundify(ColorpickerButton)
-            
-            -- Color picker dialog would be implemented here
-            ColorpickerButton.MouseButton1Click:Connect(function()
-                -- Open color picker dialog
-                Colorpicker.Callback(Colorpicker.Value)
-            end)
-            
-            ColorpickerFrame.Parent = Tab.Frame
-            Colorpicker.Instance = ColorpickerFrame
-            
-            return Colorpicker
-        end
-        
+        table.insert(self.Tabs, Tab)
         return Tab
     end
     
-    -- Additional Window Features
-    function Window:Notification(title, content, duration, type)
-        return OrionLib:Notify({
-            Title = title,
-            Content = content,
-            Duration = duration,
-            Type = type
-        })
-    end
-    
-    function Window:Destroy()
-        ScreenGui:Destroy()
-        if blur then blur:Destroy() end
-    end
-    
-    -- Send welcome notification
-    if Window.IntroEnabled then
-        Window:Notification("Welcome", "Orion UI loaded successfully!", 5, "Success")
-    end
+    -- Salvar referências
+    self.Window = Window
+    self.ScreenGui = ScreenGui
     
     return Window
 end
 
--- Tooltip System
-OrionLib.Tooltips = {}
-
-function OrionLib:CreateTooltip(parent, text)
-    local tooltip = {
-        Parent = parent,
-        Text = text,
-        Visible = false
-    }
-    
-    local tooltipUI = Instance.new("TextLabel")
-    tooltipUI.Name = "Tooltip"
-    tooltipUI.Size = UDim2.new(0, 200, 0, 0)
-    tooltipUI.Position = UDim2.new(0, 0, 1, 5)
-    tooltipUI.BackgroundColor3 = OrionLib.Theme.Secondary
-    tooltipUI.TextColor3 = OrionLib.Theme.Text
-    tooltipUI.TextSize = 12
-    tooltipUI.Font = Enum.Font.Gotham
-    tooltipUI.TextWrapped = true
-    tooltipUI.Visible = false
-    tooltipUI.ZIndex = 1000
-    tooltipUI.Parent = parent
-    
-    OrionLib:Roundify(tooltipUI)
-    
-    parent.MouseEnter:Connect(function()
-        tooltipUI.Text = text
-        tooltipUI.Size = UDim2.new(0, 200, 0, 0)
-        tooltipUI.Visible = true
-        
-        -- Calculate size based on text
-        local textSize = TextService:GetTextSize(text, 12, Enum.Font.Gotham, Vector2.new(190, math.huge))
-        tooltipUI.Size = UDim2.new(0, 200, 0, textSize.Y + 10)
-    end)
-    
-    parent.MouseLeave:Connect(function()
-        tooltipUI.Visible = false
-    end)
-    
-    table.insert(OrionLib.Tooltips, tooltip)
-    return tooltip
-end
-
--- Animation System
-OrionLib.Animations = {
-    EasingStyles = {
-        Linear = Enum.EasingStyle.Linear,
-        Quadratic = Enum.EasingStyle.Quad,
-        Cubic = Enum.EasingStyle.Cubic,
-        Quartic = Enum.EasingStyle.Quart,
-        Quintic = Enum.EasingStyle.Quint,
-        Sine = Enum.EasingStyle.Sine,
-        Exponential = Enum.EasingStyle.Exponential,
-        Circular = Enum.EasingStyle.Circular,
-        Elastic = Enum.EasingStyle.Elastic,
-        Back = Enum.EasingStyle.Back,
-        Bounce = Enum.EasingStyle.Bounce
-    },
-    EasingDirections = {
-        In = Enum.EasingDirection.In,
-        Out = Enum.EasingDirection.Out,
-        InOut = Enum.EasingDirection.InOut
-    }
-}
-
-function OrionLib:Animate(object, properties, duration, easingStyle, easingDirection)
-    local tweenInfo = TweenInfo.new(
-        duration or OrionLib.Config.AnimationSpeed,
-        easingStyle or Enum.EasingStyle.Quad,
-        easingDirection or Enum.EasingDirection.Out
-    )
-    local tween = TweenService:Create(object, tweenInfo, properties)
-    tween:Play()
-    return tween
-end
-
--- Data Saving/Loading System
-OrionLib.Data = {
-    Configs = {},
-    AutoSave = true
-}
-
-function OrionLib:SaveConfig(window, configName)
-    if not window.SaveConfig then return end
-    
-    local config = {
-        Position = window.MainContainer.Position,
-        Size = window.MainContainer.Size,
-        Tabs = {}
-    }
-    
-    -- Save tab states and values
-    for _, tab in pairs(window.Tabs) do
-        config.Tabs[tab.Name] = {
-            Active = (window.CurrentTab == tab)
-        }
-    end
-    
-    -- Save to data store
-    OrionLib.Data.Configs[configName or window.ConfigFolder] = config
-    
-    -- Simulate file saving (in real implementation, this would use DataStores or similar)
-    if OrionLib.Data.AutoSave then
-        -- Save implementation here
-    end
-end
-
-function OrionLib:LoadConfig(window, configName)
-    if not window.SaveConfig then return end
-    
-    local config = OrionLib.Data.Configs[configName or window.ConfigFolder]
-    if config then
-        window.MainContainer.Position = config.Position
-        window.MainContainer.Size = config.Size
-        
-        -- Restore tab states
-        for tabName, tabConfig in pairs(config.Tabs) do
-            for _, tab in pairs(window.Tabs) do
-                if tab.Name == tabName and tabConfig.Active then
-                    tab.Button:MouseButton1Click()
-                end
-            end
-        end
-    end
-end
-
--- Theme Management System
-OrionLib.Themes = {
-    Default = OrionLib.Theme,
-    Dark = {
-        -- Dark theme variations
-    },
-    Light = {
-        -- Light theme variations
-    },
-    Custom = {}
-}
-
-function OrionLib:SetTheme(themeName)
-    local theme = OrionLib.Themes[themeName] or OrionLib.Themes.Default
-    OrionLib.Theme = theme
-    
-    -- Update all existing UI elements
-    for _, window in pairs(OrionLib.Windows or {}) do
-        -- Theme update logic for windows
-    end
-end
-
-function OrionLib:CreateCustomTheme(themeName, themeData)
-    OrionLib.Themes.Custom[themeName] = themeData
-end
-
--- Advanced Features
-
--- Keybind System
-OrionLib.Keybinds = {}
-
-function OrionLib:RegisterKeybind(key, callback, description)
-    local keybind = {
-        Key = key,
-        Callback = callback,
-        Description = description,
-        Enabled = true
-    }
-    
-    OrionLib.Keybinds[key] = keybind
-    
-    UserInputService.InputBegan:Connect(function(input, gameProcessed)
-        if gameProcessed then return end
-        if input.KeyCode == key and keybind.Enabled then
-            keybind.Callback()
-        end
-    end)
-    
-    return keybind
-end
-
--- Watermark System
-function OrionLib:CreateWatermark(text)
-    local watermark = Instance.new("ScreenGui")
-    watermark.Name = "OrionWatermark"
-    watermark.Parent = CoreGui
-    
-    local frame = Instance.new("Frame")
-    frame.Size = UDim2.new(0, 200, 0, 30)
-    frame.Position = UDim2.new(0, 10, 0, 10)
-    frame.BackgroundColor3 = OrionLib.Theme.Secondary
-    frame.BorderSizePixel = 0
-    
-    OrionLib:Roundify(frame)
-    OrionLib:AddShadow(frame)
-    
-    local label = Instance.new("TextLabel")
-    label.Size = UDim2.new(1, -10, 1, 0)
-    label.Position = UDim2.new(0, 5, 0, 0)
-    label.BackgroundTransparency = 1
-    label.Text = text .. " | Orion UI"
-    label.TextColor3 = OrionLib.Theme.Text
-    label.TextSize = 12
-    label.Font = Enum.Font.Gotham
-    label.TextXAlignment = Enum.TextXAlignment.Left
-    label.Parent = frame
-    
-    frame.Parent = watermark
-    
-    return watermark
-end
-
--- Command System
-OrionLib.Commands = {}
-
-function OrionLib:RegisterCommand(command, callback, description)
-    OrionLib.Commands[command:lower()] = {
-        Callback = callback,
-        Description = description
-    }
-end
-
--- Chat listener for commands
-Players.PlayerAdded:Connect(function(player)
-    player.Chatted:Connect(function(message)
-        if string.sub(message:lower(), 1, 1) == "!" then
-            local command = string.sub(message:lower(), 2)
-            local args = {}
-            
-            for arg in string.gmatch(command, "%S+") do
-                table.insert(args, arg)
-            end
-            
-            local cmd = table.remove(args, 1)
-            if OrionLib.Commands[cmd] then
-                OrionLib.Commands[cmd].Callback(args)
-            end
-        end
-    end)
-end)
-
--- Utility Functions Extension
-function OrionLib:RGBToHex(color)
-    return string.format("#%02X%02X%02X", math.floor(color.R * 255), math.floor(color.G * 255), math.floor(color.B * 255))
-end
-
-function OrionLib:HexToRGB(hex)
-    hex = hex:gsub("#", "")
-    return Color3.fromRGB(
-        tonumber("0x" .. hex:sub(1, 2)),
-        tonumber("0x" .. hex:sub(3, 4)),
-        tonumber("0x" .. hex:sub(5, 6))
-    )
-end
-
-function OrionLib:FormatTime(seconds)
-    local hours = math.floor(seconds / 3600)
-    local minutes = math.floor((seconds % 3600) / 60)
-    local secs = math.floor(seconds % 60)
-    
-    if hours > 0 then
-        return string.format("%02d:%02d:%02d", hours, minutes, secs)
-    else
-        return string.format("%02d:%02d", minutes, secs)
-    end
-end
-
-function OrionLib:CreateGradient(parent, colors)
-    local gradient = Instance.new("UIGradient")
-    gradient.Color = colors or OrionLib.Theme.Gradients.Primary
-    gradient.Rotation = 90
-    gradient.Parent = parent
-    return gradient
-end
-
--- Advanced UI Components
-
--- Modern Card Component
-function OrionLib:CreateCard(config)
-    local card = {
-        Title = config.Title or "Card",
-        Content = config.Content or "",
-        Size = config.Size or UDim2.new(1, -10, 0, 100),
-        OnClick = config.OnClick
-    }
-    
-    local cardFrame = OrionLib:Create("Frame", {
-        Size = card.Size,
-        BackgroundColor3 = OrionLib.Theme.Secondary,
-        BorderSizePixel = 0
+-- Função de inicialização
+function AstraUI:Init()
+    print("🚀 Astra UI Inicializada!")
+    self:MakeNotification({
+        Name = "Astra UI",
+        Content = "Interface carregada com sucesso!",
+        Time = 5,
+        Image = "rbxassetid://7072718364"
     })
-    OrionLib:Roundify(cardFrame)
-    OrionLib:AddShadow(cardFrame)
-    
-    local title = OrionLib:Create("TextLabel", {
-        Size = UDim2.new(1, -20, 0, 25),
-        Position = UDim2.new(0, 10, 0, 10),
-        BackgroundTransparency = 1,
-        Text = card.Title,
-        TextColor3 = OrionLib.Theme.Text,
-        TextSize = 16,
-        Font = Enum.Font.GothamBold,
-        TextXAlignment = Enum.TextXAlignment.Left,
-        Parent = cardFrame
-    })
-    
-    local content = OrionLib:Create("TextLabel", {
-        Size = UDim2.new(1, -20, 1, -40),
-        Position = UDim2.new(0, 10, 0, 35),
-        BackgroundTransparency = 1,
-        Text = card.Content,
-        TextColor3 = OrionLib.Theme.SubText,
-        TextSize = 12,
-        Font = Enum.Font.Gotham,
-        TextXAlignment = Enum.TextXAlignment.Left,
-        TextYAlignment = Enum.TextYAlignment.Top,
-        TextWrapped = true,
-        Parent = cardFrame
-    })
-    
-    if card.OnClick then
-        local button = OrionLib:Create("TextButton", {
-            Size = UDim2.new(1, 0, 1, 0),
-            BackgroundTransparency = 1,
-            Text = "",
-            Parent = cardFrame
-        })
-        
-        button.MouseButton1Click:Connect(card.OnClick)
-    end
-    
-    card.Instance = cardFrame
-    return card
 end
 
--- Progress Bar Component
-function OrionLib:CreateProgressBar(config)
-    local progressBar = {
-        Value = config.Value or 0,
-        MaxValue = config.MaxValue or 100,
-        Size = config.Size or UDim2.new(1, -10, 0, 20),
-        ShowText = config.ShowText or true
-    }
-    
-    local container = OrionLib:Create("Frame", {
-        Size = progressBar.Size,
-        BackgroundColor3 = OrionLib.Theme.Secondary,
-        BorderSizePixel = 0
-    })
-    OrionLib:Roundify(container)
-    
-    local fill = OrionLib:Create("Frame", {
-        Size = UDim2.new(progressBar.Value / progressBar.MaxValue, 0, 1, 0),
-        BackgroundColor3 = OrionLib.Theme.Success,
-        BorderSizePixel = 0
-    })
-    OrionLib:Roundify(fill)
-    fill.Parent = container
-    
-    if progressBar.ShowText then
-        local text = OrionLib:Create("TextLabel", {
-            Size = UDim2.new(1, 0, 1, 0),
-            BackgroundTransparency = 1,
-            Text = math.floor((progressBar.Value / progressBar.MaxValue) * 100) .. "%",
-            TextColor3 = OrionLib.Theme.Text,
-            TextSize = 12,
-            Font = Enum.Font.GothamBold,
-            Parent = container
-        })
+-- Função para destruir
+function AstraUI:Destroy()
+    if self.ScreenGui then
+        self.ScreenGui:Destroy()
     end
-    
-    progressBar.Instance = container
-    progressBar.SetValue = function(self, value)
-        self.Value = math.clamp(value, 0, self.MaxValue)
-        OrionLib:Tween(fill, {
-            Size = UDim2.new(self.Value / self.MaxValue, 0, 1, 0)
-        }, 0.3)
-        
-        if progressBar.ShowText then
-            container.TextLabel.Text = math.floor((self.Value / self.MaxValue) * 100) .. "%"
-        end
-    end
-    
-    return progressBar
 end
 
--- Make it globally available
-getgenv().OrionLib = OrionLib
-
--- Auto-initialize
-OrionLib:Notify({
-    Title = "Orion UI",
-    Content = "Library loaded successfully!",
-    Duration = 3,
-    Type = "Success"
-})
-
-return OrionLib
+return AstraUI
